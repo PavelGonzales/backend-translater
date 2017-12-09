@@ -1,10 +1,9 @@
 'use strict';
 
-const http = require('http');  
+const http = require('https');  
 const cheerio = require('cheerio');  
-const TaxRate = require('../models');
 
-const scrapeTaxRates = (state, url, cb) => {  
+const scrapeWebsite = (url, cb) => {
   http.get(url, (res) => {
     let html = '';
 
@@ -13,12 +12,10 @@ const scrapeTaxRates = (state, url, cb) => {
     });
 
     res.on('end', () => {
-      const parser = new Parser(state);
-      const rates = parser.parse(html);
-      cb(rates);
+      cb(html);
     });
-  });
-};
+  })
+}
 
 class Parser {  
   constructor(state) {
@@ -26,12 +23,12 @@ class Parser {
   }
 
   parse(html) {
-    switch(this.state.toLowerCase()) {
-      case 'nebraska':
-        return this.parseNebraska(html);
-      default:
-        return null;
-    }
+    return this.parseHtml(html);
+  }
+
+  parseHtml(html) {
+    const $ = cheerio.load(html);
+    return $;
   }
 
   parseNebraska(html) {
@@ -55,6 +52,6 @@ class Parser {
   }
 }
 
-module.exports = {  
-  scrapeTaxRates
+module.exports = {
+  scrapeWebsite
 };

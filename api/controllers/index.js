@@ -2,6 +2,13 @@
 
 const svc = require('../services');
 
+const getHtml = (req, res) => {
+  const url = req.params.url;
+  svc.scrapeWebsite(url, (html) => {
+    res.send(html)
+  });
+}
+
 const getTaxRate = (req, res) => {  
   const state = req.params.stateName;
   svc.scrapeTaxRates(state, stateUrls[state.toLowerCase()], (rates) => {
@@ -30,5 +37,6 @@ const stateUrls = {
 module.exports = {  
   getTaxRate,
   calculateTaxes,
-  stateUrls
+  stateUrls,
+  getHtml
 };

@@ -1,7 +1,17 @@
 'use strict';
 
-const http = require('https');  
-const cheerio = require('cheerio');  
+const http = require('https');
+const ogs = require('open-graph-scraper');
+const cheerio = require('cheerio');
+const _ = require('lodash');
+const uuid = require('uuid/v1');
+
+const scrapeOpenGraph = (url, cb) => {
+  const options = {'url': url};
+  ogs(options, function (error, res) {
+    cb(res);
+  });
+}
 
 const scrapeWebsite = (url, cb) => {
   http.get(url, (res) => {
@@ -12,14 +22,15 @@ const scrapeWebsite = (url, cb) => {
     });
 
     res.on('end', () => {
-      cb(html);
+      const parser = new Parser();
+      cb(parser.parse(html));
     });
   })
 }
 
 class Parser {  
-  constructor(state) {
-    this.state = state;
+  constructor() {
+
   }
 
   parse(html) {
@@ -27,31 +38,23 @@ class Parser {
   }
 
   parseHtml(html) {
-    const $ = cheerio.load(html);
-    return $;
-  }
+    const words = [];
 
-  parseNebraska(html) {
-    const $ = cheerio.load(html);
-    let rates = [];
-    $('tr').each((idx, el) => {
-      const cells = $(el).children('td');
-      if (cells.length === 5 && !$(el).attr('bgcolor')) {
-        const rawData = {
-          city: $(cells[0]).first().text(),
-          cityRate: $(cells[1]).first().text(),
-          totalRate: $(cells[2]).first().text()
-        };
-        rawData.cityRate = parseFloat(rawData.cityRate.replace('%', ''))/100;
-        rawData.totalRate = parseFloat(rawData.totalRate.substr(0, rawData.totalRate.indexOf('%')))/100;
-        rawData.stateRate = rawData.totalRate - rawData.cityRate;
-        rates.push(new TaxRate('Nebraska', rawData.city, rawData.cityRate, rawData.stateRate));
-      }
-    });
-    return rates;
+    const textArray = html.split(' ')
+    const sortUniq = _.uniq(textArray).filter((item) => {
+      return item.match(/^[a-zA-Z]+$/)
+    })
+    const uniq_text_array = sortUniq.filter(item => words.findIndex(t => t.word === item) < 0)
+      .sort().map(item => ({id: uuid(), word: item}))
+    const uniq_words_count = uniq_text_array.length
+    return {
+      uniq_text_array,
+      uniq_words_count
+    }
   }
 }
 
 module.exports = {
-  scrapeWebsite
+  scrapeWebsite,
+  scrapeOpenGraph
 };
